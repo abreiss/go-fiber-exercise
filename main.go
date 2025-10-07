@@ -5,8 +5,10 @@ package main
 import (
 	"github.com/gofiber/fiber/v2"
 	"time"
+
 	"os"
 	"fmt"
+
 )
 
 
@@ -33,6 +35,7 @@ func main() {
 		return c.JSON(payload)
 	})
 
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3000" // local dev
@@ -42,4 +45,7 @@ func main() {
 	if err := app.Listen(addr); err != nil {
 		panic(err)
 	}
+
+	app.Listen(":3000")
+
 }
