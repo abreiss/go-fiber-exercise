@@ -5,6 +5,10 @@ package main
 import (
 	"github.com/gofiber/fiber/v2"
 	"time"
+
+	"os"
+	"fmt"
+
 )
 
 
@@ -22,6 +26,7 @@ func main() {
 		}
 
 	*/
+
 	app.Get("/", func(c *fiber.Ctx) error {
 		payload := fiber.Map{
 			"message":   "My name is Nico Reiss",
@@ -30,5 +35,17 @@ func main() {
 		return c.JSON(payload)
 	})
 
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000" // local dev
+	}
+	addr := "0.0.0.0:" + port
+	fmt.Println("Server on http://" + "localhost:" + port)
+	if err := app.Listen(addr); err != nil {
+		panic(err)
+	}
+
 	app.Listen(":3000")
+
 }
