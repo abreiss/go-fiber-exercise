@@ -24,14 +24,12 @@ func main() {
 		}
 
 	*/
-	type resp struct {
-		Message   string `json:"message"`
-		Timestamp int64  `json:"timestamp"`
-	}
 	app.Get("/", func(c *fiber.Ctx) error {
 		nowMs := time.Now().UnixMilli()
-		c.Set(fiber.HeaderContentType, "application/json")
-		return c.SendString(fmt.Sprintf(`{"message":"My name is Nico Reiss","timestamp":%d}`, nowMs))
+		json := fmt.Sprintf(`{"message":"My name is Nico Reiss","timestamp":%d}`, nowMs)
+		c.Response().Header.SetContentType("application/json")
+		c.Response().SetBodyRaw([]byte(json))
+		return nil
 	})
 
 	port := os.Getenv("PORT")
