@@ -27,7 +27,6 @@ jobs:
           IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/go-fiber-app
           VERSION=build-${{ github.run_number }}
           docker build -t $IMAGE_NAME:$VERSION -t $IMAGE_NAME:latest .
-          //need to add port
       - name: Run apprentice tests
         uses: liatrio/github-actions/apprentice-action@master
         with:
