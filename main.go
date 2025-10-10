@@ -30,23 +30,16 @@ func main() {
 
 	*/
 
-		app.Get("/", func(c *fiber.Ctx) error {
-		now := time.Now().UnixMilli()
-
-		// Build the payload with a struct
-		payload := Response{
-			Message:   "My name is Nico Reiss",
-			Timestamp: now,
+	app.Get("/", func(c *fiber.Ctx) error {
+		payload := map[string]interface{}{
+			"message":   "My name is Nico Reiss",
+			"timestamp": time.Now().UnixMilli(),
 		}
 
-		// Manually minify"
-		minified, err := json.Marshal(payload) // compact JSON
-		if err != nil {
-			return err
-		}
-
-		c.Type("json")           
-		return c.Send(minified)  // send
+		// Minify JSON 
+		c.Set("Content-Type", "application/json")
+		jsonBytes, _ := json.Marshal(payload)
+		return c.Send(jsonBytes)
 	})
 
 	port := os.Getenv("PORT")
