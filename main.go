@@ -24,14 +24,16 @@ func main() {
 		}
 
 	*/
-	app.Get("/", func(c *fiber.Ctx) error {
-		nowMs := time.Now().UnixMilli()
-		json := fmt.Sprintf(`{"message":"My name is Nico Reiss","timestamp":%d}`, nowMs)
-		c.Response().Header.SetContentType("application/json")
-		c.Response().SetBodyRaw([]byte(json))
-		return nil
-	})
 
+	app.Get("/", func(c *fiber.Ctx) error {
+		now := time.Now().UnixMilli()
+		payload := map[string]interface{}{
+			"message":   "My name is Nico Reiss",
+			"timestamp": now,
+		}
+		return c.JSON(payload)
+	})
+	
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "80" // local dev
