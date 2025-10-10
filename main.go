@@ -9,6 +9,10 @@ import (
 	"fmt"
 )
 
+type Response struct {
+	Message   string `json:"message"`
+	Timestamp int64  `json:"timestamp"`
+}
 
 func main() {
 	app := fiber.New()
@@ -25,15 +29,25 @@ func main() {
 
 	*/
 
-	app.Get("/", func(c *fiber.Ctx) error {
+		app.Get("/", func(c *fiber.Ctx) error {
 		now := time.Now().UnixMilli()
-		payload := map[string]interface{}{
-			"message":   "My name is Nico Reiss",
-			"timestamp": now,
+
+		// Build the payload with a struct
+		payload := Response{
+			Message:   "My name is Nico Reiss",
+			Timestamp: now,
 		}
-		return c.JSON(payload)
+
+		// Manually minify"
+		minified, err := json.Marshal(payload) // compact JSON
+		if err != nil {
+			return err
+		}
+
+		c.Type("json")           
+		return c.Send(minified)  // send
 	})
-	
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "80" // local dev
