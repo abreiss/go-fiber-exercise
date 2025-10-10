@@ -27,6 +27,8 @@ jobs:
       - name: Start container (host 80 -> container 3000)
         run: |
           docker run -d --name app -e PORT=3000 -p 80:3000 $IMAGE_NAME:$VERSION
+          sleep 5
+
 
       - name: Run apprentice tests
         uses: liatrio/github-actions/apprentice-action@master
