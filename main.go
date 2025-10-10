@@ -24,12 +24,17 @@ func main() {
 		}
 
 	*/
-
+	type resp struct {
+		Message   string `json:"message"`
+		Timestamp int64  `json:"timestamp"`
+	}
 	app.Get("/", func(c *fiber.Ctx) error {
-		now:= time.Now().Unix()
-        c.Set("Content-Type", "application/json")
-        return c.SendString(fmt.Sprintf(`{"message":"My name is Nico Reiss","timestamp":%d}`, now))
-    })
+		nowMs := time.Now().UnixMilli()
+		return c.JSON(resp{
+			Message:   "My name is Nico Reiss",
+			Timestamp: nowMs,
+		})
+	})
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "80" // local dev
