@@ -9,6 +9,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/go-fiber-app
+      VERSION: build-${{ github.run_number }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -16,23 +20,30 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Build Docker image
+        run: |
+          docker build -t $IMAGE_NAME:$VERSION -t $IMAGE_NAME:latest .
+
+      - name: Start container (host 80 -> container 3000)
+        run: |
+          docker run -d --name app -e PORT=3000 -p 80:3000 $IMAGE_NAME:$VERSION
+
+      - name: Run apprentice tests
+        uses: liatrio/github-actions/apprentice-action@master
+
+      - name: Stop container
+        if: always()
+        run: docker rm -f app || true
+
       - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker image
-        run: |
-          IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/go-fiber-app
-          VERSION=build-${{ github.run_number }}
-          docker build -t $IMAGE_NAME:$VERSION -t $IMAGE_NAME:latest .
-      - name: Run apprentice tests
-        uses: liatrio/github-actions/apprentice-action@master
-
       - name: Push Docker image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/go-fiber-app
-          VERSION=build-${{ github.run_number }}
           docker push $IMAGE_NAME:$VERSION
           docker push $IMAGE_NAME:latest
