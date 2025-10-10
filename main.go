@@ -12,7 +12,7 @@ import (
 
 func main() {
 	app := fiber.New()
-	timestamp := time.Now().Unix()
+	//timestamp := time.Now().Unix()
 	//looks like its unix formatting
 	//route path, does a get, returns the send string
 	// the / significes path to the endpoint like /auth
@@ -26,13 +26,10 @@ func main() {
 	*/
 
 	app.Get("/", func(c *fiber.Ctx) error {
-		payload := fiber.Map{
-			"message":   "My name is Nico Reiss",
-			"timestamp": timestamp,
-		}
-		return c.JSON(payload)
-	})
-	//check for port, if not set then do 3000
+		now:= time.Now().Unix()
+        c.Set("Content-Type", "application/json")
+        return c.SendString(fmt.Sprintf(`{"message":"My name is Nico Reiss","timestamp":%d}`, now))
+    })
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "80" // local dev
