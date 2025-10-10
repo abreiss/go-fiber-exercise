@@ -5,10 +5,8 @@ package main
 import (
 	"github.com/gofiber/fiber/v2"
 	"time"
-
 	"os"
 	"fmt"
-
 )
 
 
@@ -34,18 +32,14 @@ func main() {
 		}
 		return c.JSON(payload)
 	})
-
-
+	//check for port, if not set then do 3000
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "3000" // local dev
+		port = "80" // local dev
 	}
 	addr := "0.0.0.0:" + port
 	fmt.Println("Server on http://" + "localhost:" + port)
 	if err := app.Listen(addr); err != nil {
 		panic(err)
 	}
-
-	app.Listen(":3000")
-
 }
