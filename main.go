@@ -30,11 +30,10 @@ func main() {
 	}
 	app.Get("/", func(c *fiber.Ctx) error {
 		nowMs := time.Now().UnixMilli()
-		return c.JSON(resp{
-			Message:   "My name is Nico Reiss",
-			Timestamp: nowMs,
-		})
+		c.Set(fiber.HeaderContentType, "application/json")
+		return c.SendString(fmt.Sprintf(`{"message":"My name is Nico Reiss","timestamp":%d}`, nowMs))
 	})
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "80" // local dev
