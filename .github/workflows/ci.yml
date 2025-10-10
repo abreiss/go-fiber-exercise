@@ -29,8 +29,6 @@ jobs:
           docker build -t $IMAGE_NAME:$VERSION -t $IMAGE_NAME:latest .
       - name: Run apprentice tests
         uses: liatrio/github-actions/apprentice-action@master
-        with:
-          port: 80
 
       - name: Push Docker image
         run: |
