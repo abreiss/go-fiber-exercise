@@ -5,16 +5,19 @@ package main
 import (
 	"github.com/gofiber/fiber/v2"
 	"time"
-
 	"os"
 	"fmt"
-
+	"encoding/json"
 )
 
+type Response struct {
+	Message   string `json:"message"`
+	Timestamp int64  `json:"timestamp"`
+}
 
 func main() {
 	app := fiber.New()
-	timestamp := time.Now().Unix()
+	//timestamp := time.Now().Unix()
 	//looks like its unix formatting
 	//route path, does a get, returns the send string
 	// the / significes path to the endpoint like /auth
@@ -28,24 +31,24 @@ func main() {
 	*/
 
 	app.Get("/", func(c *fiber.Ctx) error {
-		payload := fiber.Map{
+		payload := map[string]interface{}{
 			"message":   "My name is Nico Reiss",
-			"timestamp": timestamp,
+			"timestamp": time.Now().UnixMilli(),
 		}
-		return c.JSON(payload)
-	})
 
+		// Minify JSON 
+		c.Set("Content-Type", "application/json")
+		jsonBytes, _ := json.Marshal(payload)
+		return c.Send(jsonBytes)
+	})
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "3000" // local dev
+		port = "80" // local dev
 	}
 	addr := "0.0.0.0:" + port
 	fmt.Println("Server on http://" + "localhost:" + port)
 	if err := app.Listen(addr); err != nil {
 		panic(err)
 	}
-
-	app.Listen(":3000")
-
 }
