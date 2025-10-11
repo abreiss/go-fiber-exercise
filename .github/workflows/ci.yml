@@ -29,6 +29,21 @@ jobs:
           docker run -d --name app -e PORT=3000 -p 80:3000 $IMAGE_NAME:$VERSION
           sleep 5
 
+      - name: Run API minified test
+        run: |
+          RESPONSE=$(curl -s http://localhost)
+          echo "Response: $RESPONSE"
+
+          COMPACT=$(echo "$RESPONSE" | jq -c .) || { echo "Invalid JSON"; exit 1; }
+
+          if [ "$RESPONSE" != "$COMPACT" ]; then
+            echo "JSON not minified"
+            exit 1
+          else
+            echo "JSON is valid and minified"
+          fi
+
+
       - name: Run apprentice tests (pin SHA)
         uses: liatrio/github-actions/apprentice-action@0b41561cca6822cc8d880fe0e49e7807a41fdf91
 
