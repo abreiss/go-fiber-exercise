@@ -17,8 +17,8 @@ FROM gcr.io/distroless/base-debian12
 #workdir for build
 WORKDIR /app
 #use port 80
-ENV PORT=3000
-EXPOSE 3000
+ENV PORT=80
+EXPOSE 80
 #copy from builder stage into app
 COPY --from=builder /src/userapi /app/userapi
 #run app when called on
