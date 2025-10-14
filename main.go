@@ -11,10 +11,7 @@ import (
 )
 //structure of json response
 // {“message”: “My name is ___”, “timestamp”: 123456789}
-type Response struct {
-	Message   string `json:"message"`
-	Timestamp int64  `json:"timestamp"`
-}
+
 
 func main() {
 	//create fiber web app
@@ -26,6 +23,8 @@ func main() {
 			"message":   "My name is Nico Reiss",
 			//time is in unix miliseconds
 			"timestamp": time.Now().UnixMilli(),
+			//add deploy time to adjust json
+			"deployed_at": time.Now().Format(time.RFC3339),
 		}
 		//set type to json
 		c.Set("Content-Type", "application/json")
