@@ -1,60 +1,27 @@
-name: Build & Deploy to Cloud Run on main
+name: Deploy to Cloud Run (Artifact Registry)
 
 on:
-  push:
-    branches: ["main"]
+  workflow_run:
+    workflows: ["CI - Build, Test, and Push (Artifact Registry)"]
+    types: [completed]
+    branches: [main]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    env:
-      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-      GCP_REGION: ${{ secrets.GCP_REGION }}
-      AR_HOST: ${{ secrets.GCP_REGION }}-docker.pkg.dev
-      AR_REPO: app-images
-      IMAGE_NAME: go-fiber-app
-      IMAGE_TAG: ${{ github.sha }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Google Cloud Auth
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Setup gcloud
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ env.GCP_PROJECT_ID }}
-
-      - name: Configure Docker for Artifact Registry
-        run: |
-          gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
-
-      - name: Build and push to Artifact Registry
-        run: |
-          AR_IMAGE="${{ env.AR_HOST }}/${{ env.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/${{ env.IMAGE_NAME }}"
-          docker buildx build --platform linux/amd64 \
-            -t "${AR_IMAGE}:${{ env.IMAGE_TAG }}" \
-            -t "${AR_IMAGE}:latest" \
-            --push .
-
   deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    needs: build
     permissions:
       contents: read
       id-token: write
     env:
-      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-      GCP_REGION: ${{ secrets.GCP_REGION }}
+      GCP_PROJECT_ID:    ${{ secrets.GCP_PROJECT_ID }}
+      GCP_REGION:        ${{ secrets.GCP_REGION }}
       CLOUD_RUN_SERVICE: ${{ secrets.CLOUD_RUN_SERVICE }}
-      AR_REPO: app-images
-      IMAGE_NAME: go-fiber-app
-      IMAGE_TAG: ${{ github.sha }}
-    steps:
-      - uses: actions/checkout@v4
+      AR_REPO:           app-images
+      IMAGE_NAME:        go-fiber-app
+      COMMIT_SHA:        ${{ github.event.workflow_run.head_sha }}
 
+    steps:
       - name: Google Cloud Auth
         uses: google-github-actions/auth@v2
         with:
@@ -65,12 +32,24 @@ jobs:
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
 
-      - name: Deploy to Cloud Run
+      - name: Resolve image digest from Artifact Registry
+        id: resolve
+        shell: bash
         run: |
-          AR_IMAGE="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
-          gcloud run deploy "$CLOUD_RUN_SERVICE" \
-            --image "$AR_IMAGE" \
-            --region "$GCP_REGION" \
+          AR_IMAGE="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/${{ env.IMAGE_NAME }}"
+          DIGEST=$(gcloud artifacts docker images describe "${AR_IMAGE}:${{ env.COMMIT_SHA }}" \
+                    --location="${{ env.GCP_REGION }}" \
+                    --format="value(image_summary.digest)")
+          if [ -z "$DIGEST" ]; then
+            echo "Image for ${AR_IMAGE}:${{ env.COMMIT_SHA }} not found in Artifact Registry"; exit 1
+          fi
+          echo "image_ref=${AR_IMAGE}@${DIGEST}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to Cloud Run (by digest)
+        run: |
+          gcloud run deploy "${{ env.CLOUD_RUN_SERVICE }}" \
+            --image "${{ steps.resolve.outputs.image_ref }}" \
+            --region "${{ env.GCP_REGION }}" \
             --platform managed \
             --allow-unauthenticated \
             --concurrency=80 \
