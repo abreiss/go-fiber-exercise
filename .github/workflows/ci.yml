@@ -1,48 +1,42 @@
-name: CI - Build, Test, and Push
+name: CI - Build, Test, and Push (Artifact Registry)
 
 on:
   push:
-    branches: [ main ]
+    branches: ["**"]          # build on any branch
   pull_request:
-    branches: [ main ]
+    branches: ["**"]
 
 jobs:
-  build:
+  build-test-push:
     runs-on: ubuntu-latest
     env:
-      IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/go-fiber-app
-      VERSION: build-${{ github.run_number }}
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      GCP_REGION:     ${{ secrets.GCP_REGION }}
+      AR_HOST:        ${{ secrets.GCP_REGION }}-docker.pkg.dev
+      AR_REPO:        app-images
+      IMAGE_NAME:     go-fiber-app
+      IMAGE_TAG:      ${{ github.sha }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Docker image
-        run: |
-          docker build -t $IMAGE_NAME:$VERSION -t $IMAGE_NAME:latest .
+      # Build & Test
+      - name: Build image (local)
+        run: docker build -t app:ci .
 
       - name: Start container (host 80 -> container 3000)
         run: |
-          docker run -d --name app -e PORT=3000 -p 80:3000 $IMAGE_NAME:$VERSION
+          docker run -d --name app -e PORT=3000 -p 80:3000 app:ci
           sleep 5
 
       - name: Run API minified test
         run: |
           RESPONSE=$(curl -s http://localhost)
           echo "Response: $RESPONSE"
-
           COMPACT=$(echo "$RESPONSE" | jq -c .) || { echo "Invalid JSON"; exit 1; }
-
-          if [ "$RESPONSE" != "$COMPACT" ]; then
-            echo "JSON not minified"
-            exit 1
-          else
-            echo "JSON is valid and minified"
-          fi
-
+          [ "$RESPONSE" = "$COMPACT" ] || { echo "JSON not minified"; exit 1; }
+          echo "JSON is valid and minified"
 
       - name: Run apprentice tests (pin SHA)
         uses: liatrio/github-actions/apprentice-action@0b41561cca6822cc8d880fe0e49e7807a41fdf91
@@ -51,15 +45,28 @@ jobs:
         if: always()
         run: docker rm -f app || true
 
-      - name: Log in to Docker Hub
+      # Push to Artifact Registry
+      - name: Google Cloud Auth
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: docker/login-action@v3
+        uses: google-github-actions/auth@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Push Docker image
+      - name: Setup gcloud
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Configure Docker for Artifact Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Tag and push image to Artifact Registry
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          docker push $IMAGE_NAME:$VERSION
-          docker push $IMAGE_NAME:latest
+          AR_IMAGE="${{ env.AR_HOST }}/${{ env.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/${{ env.IMAGE_NAME }}"
+          docker tag app:ci "${AR_IMAGE}:${{ env.IMAGE_TAG }}"
+          docker tag app:ci "${AR_IMAGE}:latest"
+          docker push "${AR_IMAGE}:${{ env.IMAGE_TAG }}"
+          docker push "${AR_IMAGE}:latest"
