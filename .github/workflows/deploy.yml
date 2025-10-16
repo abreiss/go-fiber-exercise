@@ -14,12 +14,12 @@ jobs:
       contents: read
       id-token: write
     env:
-      GCP_PROJECT_ID:    ${{ secrets.GCP_PROJECT_ID }}
-      GCP_REGION:        ${{ secrets.GCP_REGION }}
+      GCP_PROJECT_ID: abreiss-liatrio-exercise
+      GCP_REGION: us-west1
       CLOUD_RUN_SERVICE: ${{ secrets.CLOUD_RUN_SERVICE }}
-      AR_REPO:           app-images
-      IMAGE_NAME:        go-fiber-app
-      COMMIT_SHA:        ${{ github.event.workflow_run.head_sha }}
+      AR_REPO: app-images
+      IMAGE_NAME: go-fiber-app
+      COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
 
     steps:
       - name: Google Cloud Auth
@@ -32,27 +32,21 @@ jobs:
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
 
-      - name: Resolve image digest from Artifact Registry
+      - name: Resolve image digest (direct)
         id: resolve
-        shell: bash
         run: |
-          AR_IMAGE_BASE="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/${{ env.IMAGE_NAME }}"
-          # Look up the digest that the COMMIT_SHA tag points to
-          DIGEST=$(gcloud artifacts docker tags list "${AR_IMAGE_BASE}" \
-                    --project="${{ env.GCP_PROJECT_ID }}" \
-                    --format="get(digest)" \
-                    --filter="tag=${{ env.COMMIT_SHA }}" \
-                    --quiet)
-          if [ -z "$DIGEST" ]; then
-            echo "No digest found for tag ${{ env.COMMIT_SHA }} at ${AR_IMAGE_BASE}"; exit 1
-          fi
-          echo "image_ref=${AR_IMAGE_BASE}@${DIGEST}" >> "$GITHUB_OUTPUT"
+          AR="us-west1-docker.pkg.dev/abreiss-liatrio-exercise/app-images/go-fiber-app"
+          DIGEST=$(gcloud artifacts docker images describe \
+            "${AR}:${{ env.COMMIT_SHA }}" \
+            --project "abreiss-liatrio-exercise" \
+            --format="get(image_summary.digest)")
+          echo "image_ref=${AR}@${DIGEST}" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to Cloud Run (by digest)
         run: |
           gcloud run deploy "${{ env.CLOUD_RUN_SERVICE }}" \
             --image "${{ steps.resolve.outputs.image_ref }}" \
-            --region "${{ env.GCP_REGION }}" \
+            --region "us-west1" \
             --platform managed \
             --allow-unauthenticated \
             --concurrency=80 \
