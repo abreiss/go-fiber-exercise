@@ -4,11 +4,11 @@ on:
   workflow_run:
     workflows: ["CI - Build, Test, and Push (Artifact Registry)"]
     types: [completed]
-    branches: [main]
 
 jobs:
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # Only run if CI succeeded from main
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -36,14 +36,17 @@ jobs:
         id: resolve
         shell: bash
         run: |
-          AR_IMAGE="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/${{ env.IMAGE_NAME }}"
-          DIGEST=$(gcloud artifacts docker images describe "${AR_IMAGE}:${{ env.COMMIT_SHA }}" \
-                    --location="${{ env.GCP_REGION }}" \
-                    --format="value(image_summary.digest)")
+          AR_IMAGE_BASE="${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/${{ env.IMAGE_NAME }}"
+          # Look up the digest that the COMMIT_SHA tag points to
+          DIGEST=$(gcloud artifacts docker tags list "${AR_IMAGE_BASE}" \
+                    --project="${{ env.GCP_PROJECT_ID }}" \
+                    --format="get(digest)" \
+                    --filter="tag=${{ env.COMMIT_SHA }}" \
+                    --quiet)
           if [ -z "$DIGEST" ]; then
-            echo "Image for ${AR_IMAGE}:${{ env.COMMIT_SHA }} not found in Artifact Registry"; exit 1
+            echo "No digest found for tag ${{ env.COMMIT_SHA }} at ${AR_IMAGE_BASE}"; exit 1
           fi
-          echo "image_ref=${AR_IMAGE}@${DIGEST}" >> "$GITHUB_OUTPUT"
+          echo "image_ref=${AR_IMAGE_BASE}@${DIGEST}" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to Cloud Run (by digest)
         run: |
@@ -55,3 +58,9 @@ jobs:
             --concurrency=80 \
             --min-instances=0 \
             --max-instances=3
+
+      - name: Show service URL
+        run: |
+          gcloud run services describe "${{ env.CLOUD_RUN_SERVICE }}" \
+            --region "${{ env.GCP_REGION }}" \
+            --format='value(status.url)'
