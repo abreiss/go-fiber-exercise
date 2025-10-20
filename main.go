@@ -34,7 +34,11 @@ func main() {
 		return c.Send(jsonBytes)
 	})
 	//if port is not specified set it to 80
-	
+	port := os.Getenv("PORT")
+	if port == "" {
+   		port = "80" // local dev (you can use "3000" if you prefer)
+	}
+
 	//list to all  ip address at port
 	addr := "0.0.0.0:" + port
 	//print where the server is hosted 
