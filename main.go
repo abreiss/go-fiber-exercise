@@ -1,4 +1,4 @@
-//this app adds a JSON response with your name and a dynamic timestamp
+//this app adds a JSON response with name and a dynamic timestamp
 // and ensures the JSON output is minified
 package main
 
@@ -24,7 +24,7 @@ func main() {
 			//time is in unix miliseconds
 			"timestamp": time.Now().UnixMilli(),
 			//add deploy time to adjust json
-			"deployed_at": time.Now().Format("2006-01-02"),
+			//"deployed_at": time.Now().Format("2006-01-02"),
 		}
 		//set type to json
 		c.Set("Content-Type", "application/json")
@@ -34,15 +34,12 @@ func main() {
 		return c.Send(jsonBytes)
 	})
 	//if port is not specified set it to 80
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "80" // local dev
-	}
+	
 	//list to all  ip address at port
 	addr := "0.0.0.0:" + port
 	//print where the server is hosted 
 	fmt.Println("Server on http://" + "localhost:" + port)
-	if err := app.Listen(addr); err != nil {
+	if err := app.(addr); err != nil {
 		panic(err)
 	}
 }
