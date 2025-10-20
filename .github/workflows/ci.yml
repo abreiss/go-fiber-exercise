@@ -67,4 +67,6 @@ jobs:
         run: |
           AR_IMAGE="${{ env.AR_HOST }}/${{ env.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/${{ env.IMAGE_NAME }}"
           docker tag app:ci "${AR_IMAGE}:${{ env.IMAGE_TAG }}"
+          docker tag app:ci "${AR_IMAGE}:latest"
           docker push "${AR_IMAGE}:${{ env.IMAGE_TAG }}"
+          docker push "${AR_IMAGE}:latest"
