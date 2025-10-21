@@ -24,7 +24,7 @@ func main() {
 			//time is in unix miliseconds
 			"timestamp":   time.Now().UnixMilli(),
 			//deployed_at date.
-			"deployed_at": time.Now().Format("2006-01-03"),
+			"deployed_at": time.Now().Format("2006-01-02"),
 		})
 	})
 	//if port is not specified set it to 80
