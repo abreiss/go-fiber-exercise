@@ -18,7 +18,7 @@ func main() {
 	app := fiber.New()
 	//get route for root path
 	//when users visit, return the json
-	app.Get("/", func(c *fiber.Ctx) error {
+	/*app.Get("/", func(c *fiber.Ctx) error {
 		payload := map[string]interface{}{
 			"message":   "My name is Nico Reiss",
 			//time is in unix miliseconds
@@ -32,6 +32,13 @@ func main() {
 		jsonBytes, _ := json.Marshal(payload)
 		//send bytes as http response
 		return c.Send(jsonBytes)
+	})*/
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"message":     "My name is Nico Reiss",
+			"timestamp":   time.Now().UnixMilli(),
+			"deployed_at": time.Now().Format("2006-01-02"),
+		})
 	})
 	//if port is not specified set it to 80
 	port := os.Getenv("PORT")
