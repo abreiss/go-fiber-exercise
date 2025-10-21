@@ -14,7 +14,7 @@ RUN go mod download
 #copy everything else
 COPY . .
 #build go program at src/userapi, from src dir
-#RUN go -o /src/userapi .
+#no absolute filepath, no symbol, no debug to reduce size a little
 RUN go build -trimpath -ldflags="-s -w" -o /src/userapi .
 
 #from google container repo, build with lightweight image
