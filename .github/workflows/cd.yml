@@ -50,8 +50,3 @@ jobs:
             --min-instances=0 \
             --max-instances=3
 
-      - name: Show service URL
-        run: |
-          gcloud run services describe "${{ env.CLOUD_RUN_SERVICE }}" \
-            --region "${{ env.GCP_REGION }}" \
-            --format='value(status.url)'
