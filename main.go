@@ -7,7 +7,7 @@ import (
 "time" 							//used for timestamp
 "os"							//read port and env variables
 "fmt"							//used for printing
-"encoding/json" 				//used for json
+//"encoding/json" 				//used for json
 )
 //structure of json response
 // {“message”: “My name is ___”, “timestamp”: 123456789}
