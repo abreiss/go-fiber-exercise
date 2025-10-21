@@ -24,7 +24,6 @@ func main() {
 			//time is in unix miliseconds
 			"timestamp": time.Now().UnixMilli(),
 			//add deploy time to adjust json
-			//"deployed_at": time.Now().Format("2006-01-02"),
 			"deployed_at": time.Now().Format("2006-01-02"),
 		}
 		//set type to json
