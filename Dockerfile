@@ -14,7 +14,9 @@ RUN go mod download
 #copy everything else
 COPY . .
 #build go program at src/userapi, from src dir
-RUN go -o /src/userapi .
+#RUN go -o /src/userapi .
+RUN go build -trimpath -ldflags="-s -w" -o /src/userapi .
+
 #from google container repo, build with lightweight image
 FROM gcr.io/distroless/base-debian12
 #workdir for build
