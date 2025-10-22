@@ -46,7 +46,7 @@ jobs:
             --region "us-west1" \
             --platform managed \
             --allow-unauthenticated \
-            --concurrency=80 \
+            --concurrency=40 \
             --min-instances=0 \
             --max-instances=3
 
