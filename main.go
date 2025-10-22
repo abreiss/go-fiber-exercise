@@ -23,7 +23,7 @@ func main() {
 			//time is in unix miliseconds
 			"timestamp":   time.Now().UnixMilli(),
 			//deployed_at date.
-			"deployed_at": time.Now().Format("2006-01-02"),
+			//"deployed_at": time.Now().Format("2006-01-02"),
 		})
 	})
 	//if port is not specified set it to 80
@@ -35,7 +35,8 @@ func main() {
 	addr := "0.0.0.0:" + port
 	//print where the server is hosted 
 	fmt.Println("Server on http://" + "localhost:" + port)
+	//inf loop unless error
 	if err := app.Listen(addr); err != nil {
-	panic(err)
+		panic(err)
 	}
 }

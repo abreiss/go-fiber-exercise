@@ -1,7 +1,6 @@
 FROM golang:1.25-alpine AS builder
 #from baseimage; this is the starting point
-#eventually maybe switch to golang:1.25-alpine
-#temp workspace inc ontainer
+#temp workspace in ontainer
 WORKDIR /src
 
 ENV CGO_ENABLED=0 GOOS=linux
@@ -14,7 +13,7 @@ RUN go mod download
 #copy everything else
 COPY . .
 #build go program at src/userapi, from src dir
-#no absolute filepath, no symbol, no debug to reduce size a little
+#no absolute filepath, no symbol table, no debug output to reduce size a little
 RUN go build -trimpath -ldflags="-s -w" -o /src/userapi .
 
 #from google container repo, build with lightweight image
