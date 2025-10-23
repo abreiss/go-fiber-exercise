@@ -1,22 +1,14 @@
 # go-fiber-exercise
-To build an image:  
-docker build -t userapi .
+https://go-fiber-app-smy2gd5xla-uw.a.run.app/
 
-Confirm the image:  
-docker images
+A minimal web api  built with the Fiber framework and deployed automatically to Google Cloud Run through a GitHub Actions CI/CD pipeline.
 
-Run as a container:  
-docker run -p 8080:80 userapi
+Make any change in the repository and push to main. This will trigger the automated pipeline.
 
-Then visit:  
-http://localhost:8080
-
-to remove a container first stop it, only do this if ran in background
-otherwise cntrl c will stop
-check all running
-docker  ps
-docker stop userapi
-
-then remove it
-docker rm userapi
-
+When deployed, the app exposes a single HTTP endpoint (`/`) that returns a compact JSON object with:
+```json
+{
+   "deployed_at": "10-22-2025"
+  "message": "My name is Nico Reiss",
+  "timestamp": 1730000000000
+}
